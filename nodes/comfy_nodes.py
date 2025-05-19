@@ -4,6 +4,7 @@ import torch
 import folder_paths
 from PIL import Image
 import numpy as np
+from comfy.cli_args import args
 
 
 # Add the parent directory to the Python path so we can import from easycontrol
@@ -42,6 +43,16 @@ class InstantCharacterLoadModelFromLocal:
     def load_model(self, base_model_path, image_encoder_path, image_encoder_2_path, ip_adapter_path, cpu_offload):
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
+        base_model_path = os.path.join(args.data_dir, base_model_path)
+        image_encoder_path = os.path.join(args.data_dir, image_encoder_path)
+        image_encoder_2_path = os.path.join(args.data_dir, image_encoder_2_path)
+        ip_adapter_path = os.path.join(args.data_dir, ip_adapter_path)
+        if os.path.exists("/stable-diffusion-cache/models/FLUX.1-dev"):
+            base_model_path = "/stable-diffusion-cache/models/FLUX.1-dev"
+            image_encoder_path = "/stable-diffusion-cache/models/clip/siglip-so400m-patch14-384"
+            image_encoder_2_path = "/stable-diffusion-cache/huggingface/facebook"
+            ip_adapter_path = "/stable-diffusion-cache/huggingface/tencent/InstantCharacter/instantcharacter_ip-adapter.bin"
+
         
         pipe = InstantCharacterFluxPipeline.from_pretrained(base_model_path, torch_dtype=torch.bfloat16)
 
@@ -79,10 +90,16 @@ class InstantCharacterLoadModel:
     CATEGORY = "InstantCharacter"
 
     def load_model(self, hf_token, ip_adapter_name, cpu_offload):
-        login(token=hf_token)
-        base_model = "black-forest-labs/FLUX.1-dev"
-        image_encoder_path = "google/siglip-so400m-patch14-384"
-        image_encoder_2_path = "facebook/dinov2-giant"
+
+        if os.path.exists("/stable-diffusion-cache/models/FLUX.1-dev"):
+            base_model = "/stable-diffusion-cache/models/FLUX.1-dev"
+            image_encoder_path = "/stable-diffusion-cache/models/clip/siglip-so400m-patch14-384"
+            image_encoder_2_path = "/stable-diffusion-cache/huggingface/facebook"
+        else:
+            login(token=hf_token)
+            base_model = "black-forest-labs/FLUX.1-dev"
+            image_encoder_path = "google/siglip-so400m-patch14-384"
+            image_encoder_2_path = "facebook/dinov2-giant"
         cache_dir = folder_paths.get_folder_paths("diffusers")[0]
         image_encoder_cache_dir = folder_paths.get_folder_paths("clip_vision")[0]
         image_encoder_2_cache_dir = folder_paths.get_folder_paths("clip_vision")[0]
